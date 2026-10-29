@@ -18,7 +18,7 @@ export default function Sidebar() {
 
   const navItems = [
     { name: 'Overview', path: '/', icon: LayoutDashboard },
-    { name: 'Service Health', path: '/services', icon: Server, badge: incident?.counts?.degrading + incident?.counts?.critical },
+    { name: 'Service Health', path: '/services', icon: Server, badge: ((incident?.counts?.degrading || 0) + (incident?.counts?.critical || 0)) || null },
     { name: 'Dependency Map', path: '/dependencies', icon: GitFork },
     { name: 'Incidents', path: '/incidents', icon: AlertTriangle, badge: incident?.incidentStatus !== "NORMAL" ? "1" : null, badgeColor: "bg-rose-500/20 text-rose-300 border-rose-500/30" },
     { name: 'Incident Replay', path: '/replay', icon: RotateCcw },

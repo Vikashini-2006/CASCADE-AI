@@ -69,9 +69,144 @@ export function analyzeIncidentAtTime(currentMinuteOffset = 360) {
       }
     }
 
+const SERVICE_METADATA = {
+  'network-gateway': {
+    name: 'Network Gateway',
+    tier: 'Tier-0 Edge',
+    type: 'Ingress Mesh Gateway',
+    owner: 'Core Infrastructure',
+    description: 'Main entrypoint and traffic router for internal service mesh.'
+  },
+  'auth-service': {
+    name: 'Auth Service',
+    tier: 'Tier-1 Core',
+    type: 'Identity & Tokens',
+    owner: 'SecOps',
+    description: 'Authenticates incoming client tokens, session credentials, and API keys.'
+  },
+  'session-store': {
+    name: 'Session Store',
+    tier: 'Tier-1 Core',
+    type: 'In-Memory Session Store',
+    owner: 'Platform Core',
+    description: 'Distributed session cache storing active authentication tokens.'
+  },
+  'inventory-service': {
+    name: 'Inventory Service',
+    tier: 'Tier-2 Domain',
+    type: 'Inventory State Engine',
+    owner: 'Catalog Operations',
+    description: 'Maintains real-time product stock counts and reservation locks.'
+  },
+  'search-service': {
+    name: 'Search Service',
+    tier: 'Tier-2 Domain',
+    type: 'Search & Query Cluster',
+    owner: 'Discovery Team',
+    description: 'Full-text indexing and query cluster for platform catalog lookups.'
+  },
+  'media-upload': {
+    name: 'Media Upload',
+    tier: 'Tier-2 Media',
+    type: 'Object Ingestion Service',
+    owner: 'Media Pipeline',
+    description: 'Handles asset uploads, image optimization, and static object streaming.'
+  },
+  'payments-service': {
+    name: 'Payments Service',
+    tier: 'Tier-1 Core',
+    type: 'Payment Gateway Integration',
+    owner: 'Fintech Platform',
+    description: 'Processes payment authorisations, payment gateway calls, and ledger updates.'
+  },
+  'profile-service': {
+    name: 'Profile Service',
+    tier: 'Tier-2 Domain',
+    type: 'User Profile Management',
+    owner: 'Identity Team',
+    description: 'Serves user profile details, notification preferences, and account metadata.'
+  },
+  'chat-support': {
+    name: 'Chat Support',
+    tier: 'Tier-3 Support',
+    type: 'Customer Messaging',
+    owner: 'CX Engineering',
+    description: 'Provides customer chat WebSocket connections and agent queue routing.'
+  },
+  'recommendation-engine': {
+    name: 'Recommendation Engine',
+    tier: 'Tier-2 AI/ML',
+    type: 'ML Inference Model',
+    owner: 'Data Science',
+    description: 'Real-time personalization and product ranking inference pipeline.'
+  },
+  'checkout-service': {
+    name: 'Checkout Service',
+    tier: 'Tier-1 Core',
+    type: 'Checkout Orchestrator',
+    owner: 'Commerce Platform',
+    description: 'Coordinates multi-step purchase workflows, validation, and order placement.'
+  },
+  'billing-service': {
+    name: 'Billing Service',
+    tier: 'Tier-2 Domain',
+    type: 'Invoicing & Billing',
+    owner: 'Finance Systems',
+    description: 'Generates customer invoices, tax calculation, and payment reconciliation.'
+  },
+  'notifications-service': {
+    name: 'Notifications Service',
+    tier: 'Tier-3 Async',
+    type: 'Alerts & Push Notifications',
+    owner: 'Communications',
+    description: 'Dispatches transactional emails, SMS alerts, and mobile push notifications.'
+  },
+  'shipping-service': {
+    name: 'Shipping Service',
+    tier: 'Tier-2 Logistics',
+    type: 'Fulfillment & Tracking',
+    owner: 'Logistics Team',
+    description: 'Manages package tracking, carrier rate calculations, and label generation.'
+  },
+  'analytics-ingest': {
+    name: 'Analytics Ingest',
+    tier: 'Tier-3 Analytics',
+    type: 'Telemetry Pipeline',
+    owner: 'Data Engineering',
+    description: 'Ingests clickstream and event metrics into analytical warehouse queues.'
+  },
+  'cdn-edge': {
+    name: 'CDN Edge',
+    tier: 'Tier-0 Edge',
+    type: 'Global CDN Edge',
+    owner: 'Network Operations',
+    description: 'Edge caching network for static web assets and initial connection termination.'
+  },
+  'cache-gateway': {
+    name: 'Cache Gateway',
+    tier: 'Tier-1 Cache',
+    type: 'In-Memory Cache Proxy',
+    owner: 'Infra Cache Team',
+    description: 'Distributed Redis/Memcached cache layer for high-throughput query caching.'
+  }
+};
+
+    const meta = SERVICE_METADATA[svcId] || {
+      name: currentMetrics.name || svcId.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      tier: 'Tier-2 Service',
+      type: 'Microservice',
+      owner: 'Platform SRE',
+      description: 'Distributed microservice in CASCADE telemetry topology.'
+    };
+
     return {
+      id: svcId,
       serviceId: svcId,
-      name: currentMetrics.name || svcId,
+      name: meta.name || currentMetrics.name || svcId,
+      tier: meta.tier,
+      type: meta.type,
+      owner: meta.owner,
+      description: meta.description,
       currentLatency: currentMetrics.latency,
       baselineLatency: currentMetrics.baselineLatency,
       zScore: currentMetrics.zScore,

@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useIncident } from '../context/IncidentContext';
 import ServiceDetailDrawer from '../components/services/ServiceDetailDrawer';
 import AIRecoveryAdvisorDrawer from '../components/remediation/AIRecoveryAdvisorDrawer';
-import { getServiceStatus, getServiceLatency, getServiceZScore, getServiceQueueDepth } from '../utils/formatters';
+import { getServiceStatus, getServiceLatency, getServiceZScore, getServiceQueueDepth, getServiceErrorRate } from '../utils/formatters';
 import { Server, Search, Filter, AlertTriangle, CheckCircle2, ArrowUpRight, ArrowDownRight, Activity, Bot, X } from 'lucide-react';
 
 export default function ServiceHealthPage() {
-  const { services, healthFilter, setHealthFilter, searchQuery, setSearchQuery, incident } = useIncident();
+  const { services, healthFilter, setHealthFilter, searchQuery, setSearchQuery, incident, loading } = useIncident();
   const [selectedDrawerServiceId, setSelectedDrawerServiceId] = useState(null);
   const [advisorServiceId, setAdvisorServiceId] = useState(null);
 
@@ -75,7 +75,13 @@ export default function ServiceHealthPage() {
 
       {/* Main Microservices Health Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredServices.length === 0 ? (
+        {loading && services.length === 0 ? (
+          <div className="col-span-full py-20 text-center text-xs font-mono text-slate-400 space-y-3 bg-slate-900/60 border border-white/10 rounded-2xl">
+            <Activity className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
+            <p className="text-sm font-bold text-cyan-300">Loading live service telemetry matrix...</p>
+            <p className="text-xs text-slate-500">Connecting to telemetry streams across 17 microservices</p>
+          </div>
+        ) : filteredServices.length === 0 ? (
           <div className="col-span-full py-16 text-center text-xs font-mono text-slate-400 space-y-3 bg-slate-900/60 border border-white/10 rounded-2xl">
             <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto" />
             <p className="text-sm font-bold text-white">No services matching filter status "<strong className="uppercase text-amber-300">{healthFilter}</strong>"</p>
@@ -93,6 +99,7 @@ export default function ServiceHealthPage() {
             const status = getServiceStatus(svc);
             const latency = getServiceLatency(svc);
             const zScore = getServiceZScore(svc);
+            const errorRate = getServiceErrorRate(svc);
             const queueDepth = getServiceQueueDepth(svc);
 
             const isRootCause = incident?.rootCause?.serviceId === id;
@@ -136,8 +143,8 @@ export default function ServiceHealthPage() {
                   </span>
                 </div>
 
-                {/* Core Telemetry Stats */}
-                <div className="grid grid-cols-3 gap-2 my-4 pt-3 border-t border-white/5 text-center font-mono">
+                {/* Core Telemetry Stats: 4-Column Grid */}
+                <div className="grid grid-cols-4 gap-2 my-4 pt-3 border-t border-white/5 text-center font-mono">
                   <div className="p-2 rounded-lg bg-slate-950/60 border border-white/5">
                     <span className="text-[9px] text-slate-500 uppercase">Latency</span>
                     <p className="text-xs font-bold text-white mt-0.5">{latency} ms</p>
@@ -155,10 +162,33 @@ export default function ServiceHealthPage() {
                   </div>
 
                   <div className="p-2 rounded-lg bg-slate-950/60 border border-white/5">
+                    <span className="text-[9px] text-slate-500 uppercase">Error Rate</span>
+                    <p className={`text-xs font-bold mt-0.5 ${
+                      errorRate > 5 ? 'text-rose-400' : errorRate > 0.5 ? 'text-amber-400' : 'text-emerald-400'
+                    }`}>
+                      {errorRate}%
+                    </p>
+                    <span className="text-[9px] text-slate-500">rate limit</span>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-white/5">
                     <span className="text-[9px] text-slate-500 uppercase">Queue Depth</span>
                     <p className="text-xs font-bold text-white mt-0.5">{queueDepth} reqs</p>
                     <span className="text-[9px] text-slate-500">thread pool</span>
                   </div>
+                </div>
+
+                {/* Dependencies Summary Row */}
+                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 border-t border-white/5 pt-2">
+                  <span className="flex items-center gap-1">
+                    <ArrowUpRight className="w-3.5 h-3.5 text-cyan-400" /> Upstream: {svc.upstream?.length || 0}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <ArrowDownRight className="w-3.5 h-3.5 text-indigo-400" /> Downstream: {svc.downstream?.length || 0}
+                  </span>
+                  <span className="text-[10px] uppercase text-cyan-300/80 px-1.5 py-0.5 rounded bg-slate-950 border border-white/5">
+                    {svc.incidentRole || 'nominal'}
+                  </span>
                 </div>
 
                 {/* Action Controls & AI Recovery Advisor Button */}
@@ -177,7 +207,7 @@ export default function ServiceHealthPage() {
 
                   <button
                     onClick={() => setSelectedDrawerServiceId(id)}
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10"
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10 hover:text-white transition-colors"
                     title="View Telemetry Specs"
                   >
                     <Search className="w-3.5 h-3.5" />
