@@ -1,7 +1,12 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const DATASETS_DIR = path.join(process.cwd(), 'server', 'data', 'datasets');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATASETS_DIR = fs.existsSync(path.resolve(__dirname, 'datasets'))
+  ? path.resolve(__dirname, 'datasets')
+  : path.resolve(process.cwd(), 'server', 'data', 'datasets');
 
 function parseCSV(filePath) {
   if (!fs.existsSync(filePath)) return [];
